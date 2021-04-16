@@ -1,0 +1,419 @@
+// Copyright (C) 2008 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package com.google.caja.plugin;
+
+import com.google.caja.ancillary.opt.JsOptimizer;
+import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.ExternalReference;
+import com.google.caja.lexer.FetchedData;
+import com.google.caja.lexer.InputSource;
+import com.google.caja.lexer.JsLexer;
+import com.google.caja.lexer.JsTokenQueue;
+import com.google.caja.lexer.ParseException;
+import com.google.caja.lexer.TokenConsumer;
+import com.google.caja.lexer.escaping.UriUtil;
+import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.ParserContext;
+import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.Minify;
+import com.google.caja.parser.js.ObjectConstructor;
+import com.google.caja.parser.js.Parser;
+import com.google.caja.parser.js.Statement;
+import com.google.caja.render.JsMinimalPrinter;
+import com.google.caja.render.JsPrettyPrinter;
+import com.google.caja.reporting.MarkupRenderMode;
+import com.google.caja.reporting.Message;
+import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.MessagePart;
+import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.MessageType;
+import com.google.caja.reporting.RenderContext;
+import com.google.caja.reporting.SimpleMessageQueue;
+import com.google.caja.reporting.SnippetProducer;
+import com.google.caja.tools.BuildService;
+import com.google.caja.util.Charsets;
+import com.google.caja.util.FileIO;
+import com.google.caja.util.Pair;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.Writer;
+import java.net.URI;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+public class BuildServiceImplementation implements BuildService {
+    private final Map<InputSource, String> originalSources = Maps.newHashMap();
+
+    /**
+     * Cajoles inputs to output writing any messages to logger, returning true
+     * iff the task passes.
+     */
+    public boolean cajole(
+            PrintWriter logger, List<File> dependees, List<File> inputs, File output,
+            Map<String, Object> options) {
+        final Set<File> canonFiles = Sets.newHashSet();
+        try {
+            for (File f : dependees) {
+                canonFiles.add(f.getCanonicalFile());
+            }
+            for (File f : inputs) {
+                canonFiles.add(f.getCanonicalFile());
+            }
+        } catch (IOException ex) {
+            logger.println(ex.toString());
+            return false;
+        }
+        final MessageQueue mq = new SimpleMessageQueue();
+
+        UriFetcher fetcher = new UriFetcher() {
+            public FetchedData fetch(ExternalReference ref, String mimeType)
+                    throws UriFetchException {
+                URI uri = ref.getUri();
+                uri = ref.getReferencePosition().source().getUri().resolve(uri);
+                InputSource is = new InputSource(uri);
+
+                try {
+                    if (!canonFiles.contains(new File(uri).getCanonicalFile())) {
+                        throw new UriFetchException(ref, mimeType);
+                    }
+                } catch (IllegalArgumentException ex) {
+                    throw new UriFetchException(ref, mimeType, ex);
+                } catch (IOException ex) {
+                    throw new UriFetchException(ref, mimeType, ex);
+                }
+
+                try {
+                    String content = getSourceContent(is);
+                    if (content == null) {
+                        throw new UriFetchException(ref, mimeType);
+                    }
+                    return FetchedData.fromCharProducer(
+                            CharProducer.Factory.fromString(content, is),
+                            mimeType, Charsets.UTF_8.name());
+                } catch (IOException ex) {
+                    throw new UriFetchException(ref, mimeType, ex);
+                }
+            }
+        };
+
+        UriPolicy policy;
+        final UriPolicy prePolicy = new UriPolicy() {
+            public String rewriteUri(
+                    ExternalReference u, UriEffect effect, LoaderType loader,
+                    Map<String, ?> hints) {
+                // TODO(ihab.awad): Need to pass in the URI rewriter from the build
+                // file somehow (as a Cajita program?). The below is a stub.
+                return URI.create(
+                        "http://example.com/"
+                                + "?effect=" + effect + "&loader=" + loader
+                                + "&uri=" + UriUtil.encode("" + u.getUri()))
+                        .toString();
+            }
+        };
+        final Set<?> lUrls = (Set<?>) options.get("canLink");
+        if (!lUrls.isEmpty()) {
+            policy = new UriPolicy() {
+                public String rewriteUri(
+                        ExternalReference u, UriEffect effect,
+                        LoaderType loader, Map<String, ?> hints) {
+                    String uri = u.getUri().toString();
+                    if (lUrls.contains(uri)) {
+                        return uri;
+                    }
+                    return prePolicy.rewriteUri(u, effect, loader, hints);
+                }
+            };
+        } else {
+            policy = prePolicy;
+        }
+
+        MessageContext mc = new MessageContext();
+
+        String language = (String) options.get("language");
+        String rendererType = (String) options.get("renderer");
+
+        if ("javascript".equals(language) && "concat".equals(rendererType)) {
+            return concat(inputs, output, logger);
+        }
+
+        boolean passed = true;
+        ParseTreeNode outputJs;
+        if ("caja".equals(language)) {
+            throw new IllegalArgumentException("language=caja no longer supported");
+        } else if ("javascript".equals(language)) {
+            PluginMeta meta = new PluginMeta(fetcher, policy);
+            passed = true;
+            JsOptimizer optimizer = new JsOptimizer(mq);
+            for (File f : inputs) {
+                try {
+                    if (f.getName().endsWith(".env.json")) {
+                        loadEnvJsonFile(f, optimizer, mq);
+                    } else {
+                        ParseTreeNode parsedInput = new ParserContext(mq)
+                                .withInput(new InputSource(f.getCanonicalFile().toURI()))
+                                .withConfig(meta)
+                                .build();
+                        if (parsedInput != null) {
+                            optimizer.addInput((Statement) parsedInput);
+                        }
+                    }
+                } catch (IOException ex) {
+                    logger.println("Failed to read " + f);
+                    passed = false;
+                } catch (ParseException ex) {
+                    logger.println("Failed to parse " + f);
+                    ex.toMessageQueue(mq);
+                    passed = false;
+                } catch (IllegalStateException e) {
+                    logger.println("Failed to configure parser " + e.getMessage());
+                    passed = false;
+                }
+            }
+            outputJs = optimizer.optimize();
+        } else {
+            throw new RuntimeException("Unrecognized language: " + language);
+        }
+        passed = passed && !hasErrors(mq);
+
+        // From the ignore attribute to the <transform> element.
+        Set<?> toIgnore = (Set<?>) options.get("toIgnore");
+        if (toIgnore == null) {
+            toIgnore = Collections.emptySet();
+        }
+
+        // Log messages
+        SnippetProducer snippetProducer = new SnippetProducer(originalSources, mc);
+        for (Message msg : mq.getMessages()) {
+            if (passed && MessageLevel.LOG.compareTo(msg.getMessageLevel()) >= 0) {
+                continue;
+            }
+            String snippet = snippetProducer.getSnippet(msg);
+            if (!"".equals(snippet)) {
+                snippet = "\n" + snippet;
+            }
+            if (!passed || !toIgnore.contains(msg.getMessageType().name())) {
+                logger.println(
+                        msg.getMessageLevel() + " : " + msg.format(mc) + snippet);
+            }
+        }
+
+        // Write the output
+        if (passed) {
+            assert outputJs != null;
+            // Write out as HTML if the output file has the right extension.
+            boolean asXml = output.getName().endsWith(".xhtml");
+            boolean emitMarkup = asXml || output.getName().endsWith(".html");
+
+            StringBuilder jsOut = new StringBuilder();
+            TokenConsumer renderer;
+            if ("pretty".equals(rendererType)) {
+                renderer = new JsPrettyPrinter(jsOut);
+            } else if ("minify".equals(rendererType)) {
+                renderer = new JsMinimalPrinter(jsOut);
+            } else {
+                throw new RuntimeException("Unrecognized renderer " + rendererType);
+            }
+            RenderContext rc = new RenderContext(renderer);
+            outputJs.render(rc);
+            rc.getOut().noMoreTokens();
+
+            String htmlOut = "";
+
+            String translatedCode;
+
+            if (!"".equals(htmlOut)) {
+                throw new RuntimeException("Can't emit HTML to " + output);
+            }
+            translatedCode = jsOut.toString();
+
+            report("output (" + language + "," + rendererType + ") " +
+                    translatedCode.length() + " chars to " +
+                    output.getName());
+
+            passed = FileIO.write(translatedCode, output, logger);
+        }
+        return passed;
+    }
+
+    private static boolean concat(
+            List<File> inputs, File output, PrintWriter logger) {
+        StringBuilder result = new StringBuilder();
+        boolean ok = true;
+        boolean first = true;
+        File oneStrict = null;
+        File oneNonstrict = null;
+        for (File f : inputs) {
+            if (!first) {
+                result.append(";\n");
+            }
+            first = false;
+            try {
+                CharSequence contents = read(f);
+                if (isStrict(contents)) {
+                    oneStrict = f;
+                } else {
+                    oneNonstrict = f;
+                }
+                result.append(contents);
+            } catch (IOException ex) {
+                logger.println("Failed to read " + f);
+                ok = false;
+            }
+        }
+        if (oneStrict != null && oneNonstrict != null) {
+            logger.println("Can't naively concatenate strict and non-strict JS: "
+                    + oneStrict + " " + oneNonstrict);
+            ok = false;
+        }
+        if (ok) {
+            report("output (concat) " + result.length() + " chars to "
+                    + output.getName());
+            ok = FileIO.write(result.toString(), output, logger);
+        }
+        return ok;
+    }
+
+    private static void report(String s) {
+        System.out.println(s);
+    }
+
+    // Loosely matches top-level strict declarations.
+    //    False negative:  /* {} */ "use strict"
+    //    False positive:  /* "use strict" */
+
+    private static Pattern strictRE = Pattern.compile(
+            "^[^{]*['\"]use\\s+strict['\"]");
+
+    /*
+     * It's ok to be loose about strictness here, because this is just a
+     * sanity check when concatenating JS files in the build process, and we
+     * control all the JS files involved.
+     */
+    private static boolean isStrict(CharSequence js) {
+        return strictRE.matcher(js).find();
+    }
+
+    private String getSourceContent(InputSource is) throws IOException {
+        String content = originalSources.get(is);
+        if (content == null) {
+            File f = new File(is.getUri());
+            // Read it in and stuff it back in the map so we can generate
+            // snippets.
+            Reader in = new InputStreamReader(new FileInputStream(f), Charsets.UTF_8);
+            try {
+                char[] buf = new char[4096];
+                StringBuilder sb = new StringBuilder();
+                for (int n; (n = in.read(buf, 0, buf.length)) > 0; ) {
+                    sb.append(buf, 0, n);
+                }
+                content = sb.toString();
+            } finally {
+                in.close();
+            }
+            originalSources.put(is, content);
+        }
+        return content;
+    }
+
+    /**
+     * Minifies inputs to output writing any messages to logger, returning true
+     * iff the task passes.
+     */
+    public boolean minify(
+            PrintWriter logger, List<File> dependees, List<File> inputs, File output,
+            Map<String, Object> options) {
+        try {
+            List<Pair<InputSource, File>> inputSources = Lists.newArrayList();
+            for (File f : inputs) {
+                inputSources.add(
+                        Pair.pair(new InputSource(f.getAbsoluteFile().toURI()), f));
+            }
+            Writer outputWriter = new OutputStreamWriter(
+                    new FileOutputStream(output), Charsets.UTF_8);
+            try {
+                return Minify.minify(inputSources, outputWriter, logger);
+            } finally {
+                outputWriter.close();
+            }
+        } catch (IOException ex) {
+            logger.println("Minifying failed: " + ex);
+            return false;
+        }
+    }
+
+    private static void loadEnvJsonFile(File f, JsOptimizer op, MessageQueue mq) {
+        CharProducer cp;
+        try {
+            cp = read(f);
+        } catch (IOException ex) {
+            mq.addMessage(
+                    MessageType.IO_ERROR, MessagePart.Factory.valueOf(ex.toString()));
+            return;
+        }
+        ObjectConstructor envJson;
+        try {
+            Parser p = parser(cp, mq);
+            Expression e = p.parseExpression(true); // TODO(mikesamuel): limit to JSON
+            p.getTokenQueue().expectEmpty();
+            if (!(e instanceof ObjectConstructor)) {
+                mq.addMessage(
+                        MessageType.IO_ERROR,
+                        MessagePart.Factory.valueOf("Invalid JSON in " + f));
+                return;
+            }
+            envJson = (ObjectConstructor) e;
+        } catch (ParseException ex) {
+            ex.toMessageQueue(mq);
+            return;
+        }
+        op.setEnvJson(envJson);
+    }
+
+    private static CharProducer read(File f) throws IOException {
+        return CharProducer.Factory.fromFile(f, Charsets.UTF_8);
+    }
+
+    private static Parser parser(CharProducer cp, MessageQueue errs) {
+        JsLexer lexer = new JsLexer(cp);
+        JsTokenQueue tq = new JsTokenQueue(lexer, cp.getCurrentPosition().source());
+        return new Parser(tq, errs);
+    }
+
+    private static boolean hasErrors(MessageQueue mq) {
+        for (Message msg : mq.getMessages()) {
+            if (MessageLevel.ERROR.compareTo(msg.getMessageLevel()) <= 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
