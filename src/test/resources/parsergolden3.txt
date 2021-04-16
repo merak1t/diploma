@@ -1,0 +1,161 @@
+Block
+  ExpressionStmt
+    AssignOperation : ASSIGN
+      Reference
+        Identifier : a
+      SimpleOperation : NEGATION
+        SpecialOperation : MEMBER_ACCESS
+          Reference
+            Identifier : a
+          Reference
+            Identifier : b
+  ExpressionStmt
+    AssignOperation : ASSIGN
+      Reference
+        Identifier : x
+      SimpleOperation : NEGATION
+        AssignOperation : POST_INCREMENT
+          Reference
+            Identifier : i
+  ExpressionStmt
+    AssignOperation : ASSIGN
+      Reference
+        Identifier : z
+      SpecialOperation : SQUARE_BRACKET
+        Reference
+          Identifier : foo
+        AssignOperation : POST_INCREMENT
+          SpecialOperation : MEMBER_ACCESS
+            Reference
+              Identifier : this
+            Reference
+              Identifier : bar
+  ExpressionStmt
+    SpecialOperation : CONSTRUCTOR
+      SpecialOperation : SQUARE_BRACKET
+        Reference
+          Identifier : A
+        IntegerLiteral : 2
+  ExpressionStmt
+    SpecialOperation : CONSTRUCTOR
+      SpecialOperation : SQUARE_BRACKET
+        Reference
+          Identifier : B
+        IntegerLiteral : 4
+  ExpressionStmt
+    SpecialOperation : SQUARE_BRACKET
+      SpecialOperation : CONSTRUCTOR
+        Reference
+          Identifier : C
+      IntegerLiteral : 6
+  ExpressionStmt
+    AssignOperation : ASSIGN
+      Reference
+        Identifier : a
+      SimpleOperation : NOT
+        SpecialOperation : CONSTRUCTOR
+          SpecialOperation : MEMBER_ACCESS
+            Reference
+              Identifier : D
+            Reference
+              Identifier : E
+  ExpressionStmt
+    AssignOperation : ASSIGN
+      Reference
+        Identifier : b
+      SpecialOperation : CONSTRUCTOR
+        SpecialOperation : MEMBER_ACCESS
+          Reference
+            Identifier : F
+          Reference
+            Identifier : G
+  ExpressionStmt
+    AssignOperation : ASSIGN
+      Reference
+        Identifier : c
+      SpecialOperation : MEMBER_ACCESS
+        SpecialOperation : CONSTRUCTOR
+          SpecialOperation : MEMBER_ACCESS
+            Reference
+              Identifier : H
+            Reference
+              Identifier : I
+        Reference
+          Identifier : d
+  ExpressionStmt
+    SpecialOperation : FUNCTION_CALL
+      SpecialOperation : MEMBER_ACCESS
+        SpecialOperation : CONSTRUCTOR
+          Reference
+            Identifier : J
+        Reference
+          Identifier : K
+  ExpressionStmt
+    SpecialOperation : FUNCTION_CALL
+      SpecialOperation : MEMBER_ACCESS
+        SpecialOperation : CONSTRUCTOR
+          Reference
+            Identifier : L
+        Reference
+          Identifier : M
+  ExpressionStmt
+    SpecialOperation : CONSTRUCTOR
+      SpecialOperation : MEMBER_ACCESS
+        SpecialOperation : FUNCTION_CALL
+          Reference
+            Identifier : N
+        Reference
+          Identifier : O
+  ExpressionStmt
+    SpecialOperation : CONSTRUCTOR
+      SpecialOperation : FUNCTION_CALL
+        SpecialOperation : MEMBER_ACCESS
+          SpecialOperation : FUNCTION_CALL
+            Reference
+              Identifier : P
+          Reference
+            Identifier : Q
+  ExpressionStmt
+    SpecialOperation : FUNCTION_CALL
+      SpecialOperation : MEMBER_ACCESS
+        SpecialOperation : CONSTRUCTOR
+          Reference
+            Identifier : R
+        Reference
+          Identifier : S
+  ExpressionStmt
+    SpecialOperation : FUNCTION_CALL
+      SpecialOperation : MEMBER_ACCESS
+        SpecialOperation : CONSTRUCTOR
+          Reference
+            Identifier : T
+        Reference
+          Identifier : U
+  ExpressionStmt
+    SimpleOperation : NEGATION
+      ControlOperation : TERNARY
+        Reference
+          Identifier : a
+        Reference
+          Identifier : b
+        Reference
+          Identifier : c
+  ExpressionStmt
+    SpecialOperation : CONSTRUCTOR
+      ControlOperation : TERNARY
+        Reference
+          Identifier : d
+        Reference
+          Identifier : e
+        Reference
+          Identifier : f
+  ExpressionStmt
+    SpecialOperation : CONSTRUCTOR
+      ControlOperation : TERNARY
+        Reference
+          Identifier : g
+        Reference
+          Identifier : h
+        Reference
+          Identifier : i
+      IntegerLiteral : 1

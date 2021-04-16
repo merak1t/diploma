@@ -58,6 +58,12 @@
             <version>4.13.2</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlet</artifactId>
+            <version>9.4.21.v20190926</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <properties>

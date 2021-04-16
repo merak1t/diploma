@@ -1,0 +1,20 @@
+{
+  a = -a.b;
+  x = -i++;
+  z = foo[ this.bar++ ];
+  new A[ 2 ];
+  new B[ 4 ];
+  (new C)[ 6 ];
+  a = !new D.E;
+  b = new F.G;
+  c = (new H.I).d;
+  (new J).K();
+  (new L).M();
+  new (N().O);
+  new (P().Q());
+  (new R).S();
+  (new T).U();
+  - (a? b: c);
+  new (d? e: f);
+  new (g? h: i)(1);
+}
