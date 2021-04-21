@@ -26,26 +26,18 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.render.JsPrettyPrinter;
-import com.google.caja.reporting.Message;
-import com.google.caja.reporting.MessageContext;
-import com.google.caja.reporting.MessageLevel;
-import com.google.caja.reporting.MessagePart;
-import com.google.caja.reporting.MessageType;
-import com.google.caja.reporting.RenderContext;
+import com.google.caja.reporting.*;
 import com.google.caja.util.CajaTestCase;
-import com.google.caja.util.FailureIsAnOption;
 import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.Strings;
 import com.google.caja.util.TestUtil;
+import junit.framework.AssertionFailedError;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-
-import junit.framework.AssertionFailedError;
-import org.w3c.dom.ls.LSOutput;
 
 /**
  * @author mikesamuel@gmail.com
