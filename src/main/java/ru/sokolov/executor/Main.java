@@ -1,68 +1,58 @@
 package ru.sokolov.executor;
 
+import com.google.caja.lexer.ParseException;
+import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.js.Block;
+import ru.sokolov.ssa.Visitor;
 import ru.sokolov.type_inference.Inference;
-import ru.sokolov.type_inference.ast.*;
 import ru.sokolov.type_inference.type.Type;
 
-import java.util.Arrays;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.List;
+
+import static ru.sokolov.executor.Utils.fromResource;
+import static ru.sokolov.executor.Utils.js;
 
 public class Main {
 
-    public static void main(String[] args) throws Exception {
-        Node[] roots1 = new Node[]{
-                new Let(
-                        "x",
-                        new Literal(5),
-                        new Identifier("x")
-                ),
+    private static void dfs(ParseTreeNode cur) {
+        for (var item : cur.children()) {
+            System.out.println(item);
+            dfs(item);
+        }
+    }
 
-                // let f = (fn y => y) in ((pair (f 4)) (f true))
-                new Let(
-                        "f",
-                        new Lambda("y", new Identifier("y")),
-                        new Apply(
-                                new Apply(
-                                        new Identifier("pair"),
-                                        new Apply(new Identifier("f"), new Literal(4))
-                                ),
-                                new Apply(new Identifier("f"), new Identifier("x"))
-                        )
-                )
-        };
+    private static void print(ParseTreeNode cur, String fileName) throws IOException {
+        StringBuilder output = new StringBuilder();
+        cur.format(Utils.mc, output);
+        output.append('\n');
+        System.out.println(output);
+        PrintWriter writer = new PrintWriter("src/main/resources/" + fileName, "UTF-8");
+        writer.println(output);
+        writer.close();
+    }
 
-        Node[] roots2 = new Node[]{
-                new Let(
-                        "x",
-                        new Identifier("y"),
-                        new Identifier("x")
-                ),
-                new Let(
-                        "y",
-                        new Identifier("z"),
-                        new Identifier("y")
-                ),
-                new Let(
-                        "z",
-                        new Literal(5),
-                        new Identifier("z")
-                )
-        };
+    public static void main(String[] args) throws IOException, ParseException {
+        String testFile = "test.js";
+        Block parseTree = js(fromResource(testFile));
+        //dfs(parseTree);
+        Visitor visitor = new Visitor();
+        var newTree = visitor.visitProgram(parseTree);
+        print(parseTree, "tree.txt");
+        print(newTree, "newTree.txt");
 
-        Node[] roots3 = new Node[]{
-                new Function(Arrays.asList("x", "y"), new Apply(new Apply(new Identifier("*"), new Identifier("x")),
-                        new Identifier("y"))),
-
-                new Let(
-                        "z",
-                        new Literal(5),
-                        new Identifier("z")
-                )
-        };
-        List<Node> inputNodes = Arrays.asList(roots3);
+        TranslateToLambda translator = new TranslateToLambda();
+        var inputNodes = translator.visitProgram(newTree);
+        for(var it : inputNodes){
+            System.out.println(it);
+        }
+        System.out.println();
         List<Type> types = Inference.analyze(inputNodes);
         for (var i = 0; i < inputNodes.size(); i++) {
             System.out.println(inputNodes.get(i) + " : " + types.get(i));
         }
+
+
     }
 }

@@ -18,6 +18,7 @@ public class Inference {
         put(LiteralType.BOOLEAN, BooleanType);
         put(LiteralType.INTEGER, IntegerType);
         put(LiteralType.STRING, StringType);
+        put(LiteralType.ANY, AnyType);
     }};
 
     private static final Map<String, Type> StandardEnv = new HashMap<>();
@@ -30,7 +31,8 @@ public class Inference {
 
         StandardEnv.put("*", new Arrow(IntegerType, new Arrow(IntegerType, IntegerType)));
         StandardEnv.put("-", new Arrow(IntegerType, new Arrow(IntegerType, IntegerType)));
-
+        //StandardEnv.put("+", new Arrow(IntegerType, new Arrow(IntegerType, IntegerType)));
+        StandardEnv.put("+", new Arrow(StringType, new Arrow(IntegerType, StringType)));
         StandardEnv.put("pair", new Arrow(var1, new Arrow(var2, new Tuple(var1, var2))));
 
         // List
@@ -57,9 +59,9 @@ public class Inference {
                 node.getType(StandardEnv, nonGenerics);
             }
         }
-        for (var cur : StandardEnv.entrySet()) {
+        /*for (var cur : StandardEnv.entrySet()) {
             System.out.println(cur.getKey() + " " + cur.getValue());
-        }
+        }*/
         for (var node : nodes) {
             resTypes.add(node.getType(StandardEnv, nonGenerics));
         }

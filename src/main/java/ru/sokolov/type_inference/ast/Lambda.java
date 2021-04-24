@@ -4,6 +4,8 @@ import ru.sokolov.type_inference.type.Arrow;
 import ru.sokolov.type_inference.type.Type;
 import ru.sokolov.type_inference.type.TypeVariable;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,9 +30,11 @@ public class Lambda extends Node {
 	@Override
 	public Type getType(Map<String, Type> env, Set<TypeVariable> nonGenerics) {
         TypeVariable argType = new TypeVariable();
-		env.put(var, argType);
-		nonGenerics.add(argType);
-        Type resultType = body.getType(env, nonGenerics);
+        var newEnv = new HashMap<>(env);
+		newEnv.put(var, argType);
+        var newNonGenerics = new HashSet<>(nonGenerics);
+		newNonGenerics.add(argType);
+        Type resultType = body.getType(newEnv, newNonGenerics);
         return new Arrow(argType, resultType);
 	}
 }

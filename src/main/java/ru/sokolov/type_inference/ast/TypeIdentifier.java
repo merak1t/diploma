@@ -8,11 +8,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class Identifier extends Node {
+public class TypeIdentifier extends Node {
 
 	private final String name;
 
-	public Identifier(String name) {
+	public TypeIdentifier(String name) {
 		this.name = name;
 	}
 

@@ -10,20 +10,29 @@ import java.util.Set;
 /**
  * An integer literal
  */
-public class Literal extends Node {
+public class TypeLiteral extends Node {
 
     private final LiteralType type;
+    private final String value;
 
-    public Literal(int i) {
+    public TypeLiteral(int i) {
+        this.value = String.valueOf(i);
         this.type = LiteralType.INTEGER;
     }
 
-    public Literal(boolean b) {
+    public TypeLiteral(boolean b) {
+        this.value = String.valueOf(b);
         this.type = LiteralType.BOOLEAN;
     }
 
-    public Literal(String s) {
+    public TypeLiteral(String s) {
+        this.value = String.valueOf(s);
         this.type = LiteralType.STRING;
+    }
+
+    public TypeLiteral() {
+        this.value = "null";
+        this.type = LiteralType.ANY;
     }
 
     @Override
@@ -33,6 +42,6 @@ public class Literal extends Node {
 
     @Override
     public String toString() {
-        return Inference.typeMapper.getOrDefault(type, Inference.AnyType).toString();
+        return value;
     }
 }
