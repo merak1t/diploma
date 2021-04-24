@@ -1,14 +1,15 @@
-package ru.sokolov.ssa;
+package ru.sokolov.executor;
 
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
+import ru.sokolov.ssa.Visitor;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 
-import static ru.sokolov.ssa.Utils.fromResource;
-import static ru.sokolov.ssa.Utils.js;
+import static ru.sokolov.executor.Utils.fromResource;
+import static ru.sokolov.executor.Utils.js;
 
 public class SSA {
 

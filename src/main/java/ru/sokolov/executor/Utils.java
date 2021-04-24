@@ -1,4 +1,4 @@
-package ru.sokolov.ssa;
+package ru.sokolov.executor;
 
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.*;

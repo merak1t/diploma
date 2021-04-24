@@ -388,7 +388,7 @@ public class ParserTest extends CajaTestCase {
         NumberLiteral l = (NumberLiteral) jsExpr(fromString("0x7fffffffffffffff"));
         assertMessage(
                 MessageType.UNREPRESENTABLE_INTEGER_LITERAL, MessageLevel.WARNING);
-        assertEquals(new Double(9223372036854776000d), l.getValue());
+        assertEquals(9223372036854776000d, l.getValue());
     }
 
     public final void testOutOfRangeLiterals2() throws Exception {
