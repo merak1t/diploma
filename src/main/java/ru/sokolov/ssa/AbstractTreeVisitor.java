@@ -1,12 +1,15 @@
 package ru.sokolov.ssa;
 
-import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.*;
+
+import java.util.ArrayList;
 
 public interface AbstractTreeVisitor {
     Block visitProgram(Block ctx);
 
     Declaration visitDeclaration(Declaration ctx);
+
+    MultiDeclaration visitMultiDeclaration(MultiDeclaration ctx);
 
     FunctionDeclaration visitFunctionDeclaration(FunctionDeclaration ctx);
 
@@ -26,4 +29,9 @@ public interface AbstractTreeVisitor {
 
     AssignOperation visitAssignOperation(AssignOperation ctx);
 
+    ArrayList<Statement> visitConditional(Conditional ctx);
+
+    ForLoop visitForLoop(ForLoop ctx);
+
+    WhileLoop visitWhileLoop(WhileLoop ctx);
 }

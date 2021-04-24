@@ -1,5 +1,7 @@
 package ru.sokolov.ssa;
 
+import com.google.caja.util.Pair;
+
 import java.util.HashMap;
 
 public class IdentifierMemory {
@@ -7,6 +9,12 @@ public class IdentifierMemory {
 
     public IdentifierMemory() {
         versionByVar = new HashMap<>();
+    }
+
+
+    public static Pair<String, Integer> getNameFromIdentifier(String identifier) {
+        String[] idArr = identifier.split("\\$");
+        return new Pair<>(idArr[0], Integer.parseInt(idArr[1]));
     }
 
     public String getNewVersion(String curVar) {
@@ -25,7 +33,7 @@ public class IdentifierMemory {
 
         } else {
             System.err.println("Undefined variable " + curVar);
-            return curVar;
+            return null;
         }
     }
 }
