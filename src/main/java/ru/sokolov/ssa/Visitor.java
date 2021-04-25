@@ -262,6 +262,8 @@ public class Visitor implements AbstractTreeVisitor {
             var child = ctx.children().get(i);
             if (child instanceof SimpleOperation) {
                 res.add(visitSimpleOperation((SimpleOperation) child));
+            } else if (child instanceof Reference) {
+                res.add(visitReference((Reference) child));
             } else {
                 res.add(child);
             }
@@ -282,6 +284,8 @@ public class Visitor implements AbstractTreeVisitor {
             var child = ctx.children().get(i);
             if (child instanceof SimpleOperation) {
                 res.add(visitSimpleOperation((SimpleOperation) child));
+            } else if (child instanceof Reference) {
+                res.add(visitReference((Reference) child));
             } else {
                 res.add(child);
             }

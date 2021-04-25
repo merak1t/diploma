@@ -3,6 +3,7 @@ package ru.sokolov.executor;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.*;
 import ru.sokolov.type_inference.ast.*;
+import ru.sokolov.type_inference.type.Tuple;
 import ru.sokolov.type_inference.type.Type;
 
 import java.util.ArrayList;
@@ -71,6 +72,9 @@ public class TranslateToLambda implements AbstractTranslate {
                 System.err.println("Undefined " + child + " in context " + ctx);
             }
         }
+        if (res.size() == 1) {
+            return res.get(0);
+        }
         assert res.size() == 2;
         var varName = res.get(0).toString();
         System.out.println("res " + res);
@@ -103,7 +107,15 @@ public class TranslateToLambda implements AbstractTranslate {
 
     @Override
     public List<Node> visitExpressionStmt(ExpressionStmt ctx) {
-        return null;
+        var res = new ArrayList<Node>();
+        var operation = ctx.getExpression();
+        if (operation instanceof AssignOperation) {
+            res.add(visitAssignOperation((AssignOperation) operation));
+        } else {
+            System.err.println("Unexpected operation " + operation + " in context " + ctx);
+        }
+        return res;
+
     }
 
     @Override
@@ -121,7 +133,7 @@ public class TranslateToLambda implements AbstractTranslate {
             }
         }
         assert res.size() == 2;
-        return new BiFunction(ctx.getOperator(), res.get(0), res.get(1));
+        return new Apply(new TypeIdentifier("+"), new Array(res));
     }
 
     @Override
@@ -204,8 +216,23 @@ public class TranslateToLambda implements AbstractTranslate {
     }
 
     @Override
-    public List<Node> visitAssignOperation(AssignOperation ctx) {
-        return null;
+    public Node visitAssignOperation(AssignOperation ctx) {
+        var res = new ArrayList<Node>();
+        for (var child : ctx.children()) {
+            if (child instanceof SimpleOperation) {
+                res.add(visitSimpleOperation((SimpleOperation) child));
+            } else if (child instanceof Reference) {
+                res.add(visitReference((Reference) child));
+            } else if (child instanceof Literal) {
+                res.add(createLiteral((Literal) child));
+            } else {
+                System.err.println("Type.Undefined " + child + " in context " + ctx);
+            }
+        }
+        assert res.size() == 2 && res.get(0) instanceof TypeIdentifier;
+        System.out.println("ASSIGN " + res);
+        var leftVarName = ((Reference)ctx.children().get(0)).getIdentifierName();
+        return new Let(leftVarName, res.get(1), res.get(0));
     }
 
     @Override
@@ -228,7 +255,7 @@ public class TranslateToLambda implements AbstractTranslate {
             }
         }
         assert fn != null;
-        System.out.println("FN " + fn + " : " + new Array(res));
+        //System.out.println("FN " + fn + " : " + new Array(res));
         return new Apply(fn, new Array(res));
     }
 

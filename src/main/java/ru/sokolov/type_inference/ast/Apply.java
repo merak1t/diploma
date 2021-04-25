@@ -26,6 +26,7 @@ public class Apply extends Node {
 
 	@Override
 	public Type getType(Map<String, Type> env, Set<TypeVariable> nonGenerics) {
+		//System.out.println("APPLY " + fn + " : " + arg);
 		Type fnType = fn.getType(env, nonGenerics);
 		Type argType = arg.getType(env, nonGenerics);
 		Type resultType = new TypeVariable();

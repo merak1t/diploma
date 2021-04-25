@@ -29,7 +29,7 @@ public interface AbstractTranslate {
 
     Node visitReference(Reference ctx);
 
-    List<Node> visitAssignOperation(AssignOperation ctx);
+    Node visitAssignOperation(AssignOperation ctx);
 
     Node visitSpecialOperation(SpecialOperation ctx);
 

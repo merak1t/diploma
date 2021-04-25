@@ -1,0 +1,64 @@
+Block
+  FunctionDeclaration
+    Identifier : F
+    FunctionConstructor
+      Identifier : F
+      FormalParam
+        Identifier : a$1
+      FormalParam
+        Identifier : b$1
+      FormalParam
+        Identifier : c$1
+      FormalParam
+        Identifier : d$1
+      FormalParam
+        Identifier : e$1
+      Block
+  Declaration
+    Identifier : F$1
+  Declaration
+    Identifier : a$2
+    StringLiteral : "one"
+  Declaration
+    Identifier : b$2
+    IntegerLiteral : 1
+  Declaration
+    Identifier : c$2
+    SimpleOperation : ADDITION
+      Reference
+        Identifier : a
+      Reference
+        Identifier : b
+  Declaration
+    Identifier : arr$1
+    ArrayConstructor
+      Reference
+        Identifier : b
+      IntegerLiteral : 2
+      IntegerLiteral : 3
+  ExpressionStmt
+    AssignOperation : ASSIGN
+      Reference
+        Identifier : c
+      SimpleOperation : ADDITION
+        SimpleOperation : ADDITION
+          SimpleOperation : ADDITION
+            IntegerLiteral : 2
+            StringLiteral : " equals "
+          Reference
+            Identifier : c
+        StringLiteral : '?'
+  ExpressionStmt
+    SpecialOperation : FUNCTION_CALL
+      SpecialOperation : MEMBER_ACCESS
+        Reference
+          Identifier : console
+        Reference
+          Identifier : log
+      Reference
+        Identifier : a
+      Reference
+        Identifier : b
+      Reference
+        Identifier : c
+

@@ -27,7 +27,13 @@ public class Function extends Node {
 
     @Override
     public String toString() {
-        return "fn[" + listVariables + "] => " + body;
+        StringBuilder sb = new StringBuilder("function ");
+        sb.append(fn).append(listVariables).append(" => ");
+        if (!body.isEmpty()) {
+            sb.append(body);
+        }
+        sb.append(" return ").append(returnStmt);
+        return sb.toString();
     }
 
     @Override
@@ -45,8 +51,8 @@ public class Function extends Node {
             cur.getType(newEnv, newNonGenerics);
         }
         Type resultType = returnStmt.getType(newEnv, newNonGenerics);
-        env.put(fn.toString(),  new Arrow(new Tuple(listParams), resultType));
-        newEnv.put(fn.toString(),  new Arrow(new Tuple(listParams), resultType));
+        env.put(fn.toString(), new Arrow(new Tuple(listParams), resultType));
+        newEnv.put(fn.toString(), new Arrow(new Tuple(listParams), resultType));
         return new Arrow(new Tuple(listParams), resultType);
     }
 }

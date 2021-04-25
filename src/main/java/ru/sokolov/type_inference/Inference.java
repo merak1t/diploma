@@ -31,7 +31,7 @@ public class Inference {
 
         //StandardEnv.put("*", new Arrow(IntegerType, new Arrow(IntegerType, IntegerType)));
         //StandardEnv.put("-", new Arrow(IntegerType, new Arrow(IntegerType, IntegerType)));
-        //StandardEnv.put("+", new Arrow(IntegerType, new Arrow(IntegerType, IntegerType)));
+        StandardEnv.put("+", new Arrow(new Tuple(var1, var1),var1));
         //StandardEnv.put("+", new Arrow(StringType, new Arrow(IntegerType, StringType)));
         StandardEnv.put("pair", new Arrow(var1, new Arrow(var2, new Tuple(var1, var2))));
 

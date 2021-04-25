@@ -1,0 +1,85 @@
+Block
+  FunctionDeclaration
+    Identifier : F
+    FunctionConstructor
+      Identifier : F
+      FormalParam
+        Identifier : a
+      FormalParam
+        Identifier : b
+      Block
+        ReturnStmt
+          SimpleOperation : ADDITION
+            Reference
+              Identifier : a
+            Reference
+              Identifier : b
+  Declaration
+    Identifier : a
+    StringLiteral : "one"
+  Declaration
+    Identifier : b
+    IntegerLiteral : 1
+  Declaration
+    Identifier : c
+    SimpleOperation : ADDITION
+      Reference
+        Identifier : a
+      StringLiteral : "two"
+  Declaration
+    Identifier : arr
+    ArrayConstructor
+      Reference
+        Identifier : b
+      SimpleOperation : ADDITION
+        IntegerLiteral : 2
+        Reference
+          Identifier : b
+      SimpleOperation : SUBTRACTION
+        IntegerLiteral : 3
+        IntegerLiteral : 1
+  MultiDeclaration
+    Declaration
+      Identifier : x
+    Declaration
+      Identifier : y
+      BooleanLiteral : true
+    Declaration
+      Identifier : z
+      StringLiteral : "False"
+  ExpressionStmt
+    AssignOperation : ASSIGN
+      Reference
+        Identifier : x
+      Reference
+        Identifier : y
+  ExpressionStmt
+    AssignOperation : ASSIGN
+      Reference
+        Identifier : y
+      Reference
+        Identifier : z
+  ExpressionStmt
+    AssignOperation : ASSIGN
+      Reference
+        Identifier : z
+      IntegerLiteral : 5
+  Declaration
+    Identifier : d
+    SpecialOperation : FUNCTION_CALL
+      Reference
+        Identifier : F
+      Reference
+        Identifier : b
+      Reference
+        Identifier : z
+  Declaration
+    Identifier : e
+    SpecialOperation : FUNCTION_CALL
+      Reference
+        Identifier : F
+      Reference
+        Identifier : a
+      Reference
+        Identifier : c
+

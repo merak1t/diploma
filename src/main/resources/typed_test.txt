@@ -1,0 +1,14 @@
+function F$1[a$1, b$1] =>  return (+ [a$1, b$1]) : ((a, a) -> a)
+(let a$2 = "one" in a$2) : String
+(let b$2 = 1 in b$2) : Integer
+(let c$1 = (+ [a$2, "two"]) in c$1) : String
+(let arr$1 = [b$2, (+ [2, b$2]), (+ [3, 1])] in arr$1) : (Integer, Integer, Integer)
+x$1 : b
+(let y$1 = true in y$1) : Boolean
+(let z$1 = "False" in z$1) : String
+(let x$2 = y$1 in x$2) : Boolean
+(let y$2 = z$1 in y$2) : String
+(let z$2 = 5 in z$2) : Integer
+(let d$1 = (F$1 [b$2, z$2]) in d$1) : Integer
+(let e$1 = (F$1 [a$2, c$1]) in e$1) : String
+

@@ -35,10 +35,6 @@ public class TypeVariable extends Type {
 		}
 	}
 
-	/**
-	 * Checks is this type variable is a generic one - i.e. it does not occur in
-	 * any of the nonGenerics.
-	 */
 	private boolean isGeneric(Set<TypeVariable> nonGenerics) {
 		for (Type var : nonGenerics) {
 			if (var.contains(this))

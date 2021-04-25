@@ -1,12 +1,16 @@
-function F(a, b, c, d, e) {
-    return a + b + c + d + e;
+function F(a, b) {
+    return a + b;
 }
 
 var a = "one";
 var b = 1;
-var c = a + b;
+var c = a + "two";
 var arr = [b, 2 + b, 3 - 1];
+var x, y = true, z = "False";
+x = y;
+y = z;
+z = 5;
+var d = F(b, z);
+var e = F(a, c);
 
 
-
-var x = F(1, b + 2, 3, 4, a);

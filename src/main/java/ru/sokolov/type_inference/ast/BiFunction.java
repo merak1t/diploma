@@ -52,6 +52,7 @@ public class BiFunction extends Node {
         Type res = typeList.get(Math.max(leftPriority, rightPriority));
         Type resultType = new TypeVariable();
         Inference.unify(new Arrow(new Tuple(leftType, rightType), resultType), new Arrow(new Tuple(leftType, rightType), res));
-        return new Arrow(new Tuple(leftType, rightType), resultType);
+        //return new Arrow(new Tuple(leftType, rightType), resultType);
+        return resultType;
     }
 }

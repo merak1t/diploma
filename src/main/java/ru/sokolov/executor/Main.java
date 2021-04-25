@@ -5,10 +5,13 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
 import ru.sokolov.ssa.Visitor;
 import ru.sokolov.type_inference.Inference;
+import ru.sokolov.type_inference.ast.Node;
 import ru.sokolov.type_inference.type.Type;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 import static ru.sokolov.executor.Utils.fromResource;
@@ -33,6 +36,21 @@ public class Main {
         writer.close();
     }
 
+    private static void print(List<Node> inputNodes, String fileName) throws IOException  {
+        StringBuilder output = new StringBuilder();
+        for (var it : inputNodes) {
+            System.out.println(it);
+        }
+        List<Type> types = Inference.analyze(inputNodes);
+        for (var i = 0; i < inputNodes.size(); i++) {
+            output.append(inputNodes.get(i)).append(" : ").append(types.get(i).toString(true));
+            output.append('\n');
+        }
+        PrintWriter writer = new PrintWriter("src/main/resources/" + fileName, "UTF-8");
+        writer.println(output);
+        writer.close();
+    }
+
     public static void main(String[] args) throws IOException, ParseException {
         String testFile = "test.js";
         Block parseTree = js(fromResource(testFile));
@@ -44,15 +62,7 @@ public class Main {
 
         TranslateToLambda translator = new TranslateToLambda();
         var inputNodes = translator.visitProgram(newTree);
-        for(var it : inputNodes){
-            System.out.println(it);
-        }
-        System.out.println();
-        List<Type> types = Inference.analyze(inputNodes);
-        for (var i = 0; i < inputNodes.size(); i++) {
-            System.out.println(inputNodes.get(i) + " : " + types.get(i));
-        }
-
+        print(inputNodes, "typed_test.txt");
 
     }
 }
