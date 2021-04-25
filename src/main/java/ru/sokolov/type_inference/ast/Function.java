@@ -14,11 +14,15 @@ import java.util.*;
 public class Function extends Node {
 
     private final List<String> listVariables;
-    private final Node body;
+    private final List<Node> body;
+    private final Node returnStmt;
+    private final Node fn;
 
-    public Function(List<String> vars, Node body) {
+    public Function(Node fn, List<String> vars, List<Node> body, Node returnStmt) {
+        this.fn = fn;
         this.listVariables = vars;
         this.body = body;
+        this.returnStmt = returnStmt;
     }
 
     @Override
@@ -28,16 +32,21 @@ public class Function extends Node {
 
     @Override
     public Type getType(Map<String, Type> env, Set<TypeVariable> nonGenerics) {
-        var listParams = new ArrayList<TypeVariable>();
-        for (var curVar : listVariables){
+        var listParams = new ArrayList<Type>();
+        var newEnv = new HashMap<>(env);
+        var newNonGenerics = new HashSet<>(nonGenerics);
+        for (var curVar : listVariables) {
             TypeVariable argType = new TypeVariable();
             listParams.add(argType);
-            env.put(curVar, argType);
-            nonGenerics.add(argType);
+            newEnv.put(curVar, argType);
+            newNonGenerics.add(argType);
         }
-        Type resultType = body.getType(env, nonGenerics);
-        TypeVariable[] tupleArray = new TypeVariable[listParams.size()];
-        listParams.toArray(tupleArray);
-        return new Arrow(new Tuple(tupleArray), resultType);
+        for (var cur : body) {
+            cur.getType(newEnv, newNonGenerics);
+        }
+        Type resultType = returnStmt.getType(newEnv, newNonGenerics);
+        env.put(fn.toString(),  new Arrow(new Tuple(listParams), resultType));
+        newEnv.put(fn.toString(),  new Arrow(new Tuple(listParams), resultType));
+        return new Arrow(new Tuple(listParams), resultType);
     }
 }

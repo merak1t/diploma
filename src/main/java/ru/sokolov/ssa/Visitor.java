@@ -78,6 +78,23 @@ public class Visitor implements AbstractTreeVisitor {
     }
 
     @Override
+    public SpecialOperation visitSpecialOperation(SpecialOperation ctx) {
+        ArrayList<Expression> res = new ArrayList<>();
+        for (var child : ctx.children()) {
+            if (child instanceof Reference) {
+                res.add(visitReference((Reference) child));
+            } else if (child instanceof SimpleOperation) {
+                res.add(visitSimpleOperation((SimpleOperation) child));
+            } else if (child instanceof Literal) {
+                res.add(child);
+            } else {
+                System.out.println("Undefined in Declaration " + child);
+            }
+        }
+        return new SpecialOperation(ctx.getFilePosition(), ctx.getOperator(), res);
+    }
+
+    @Override
     public Reference visitReference(Reference ctx) {
         if (ctx.children().isEmpty()) {
             System.out.println("Wrong reference " + ctx);
@@ -105,6 +122,8 @@ public class Visitor implements AbstractTreeVisitor {
                     res.add(visitSimpleOperation((SimpleOperation) nextChild));
                 } else if (nextChild instanceof ArrayConstructor) {
                     res.add(visitArrayConstructor((ArrayConstructor) nextChild));
+                } else if (nextChild instanceof SpecialOperation) {
+                    res.add(visitSpecialOperation((SpecialOperation) nextChild));
                 } else {
                     System.out.println("Undefined " + nextChild);
                 }

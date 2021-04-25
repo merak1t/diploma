@@ -3,6 +3,7 @@ package ru.sokolov.type_inference.type;
 
 import ru.sokolov.type_inference.Inference;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -15,6 +16,15 @@ public class TypeConstructor extends Type {
 		this.name = name;
 		this.types = types;
 	}
+
+	public TypeConstructor(String name, List<Type> types) {
+		this.name = name;
+		Type[] tupleArray = new Type[types.size()];
+		types.toArray(tupleArray);
+		this.types = tupleArray;
+	}
+
+
 
 	@Override
 	public Type freshType(Set<TypeVariable> nonGenerics,

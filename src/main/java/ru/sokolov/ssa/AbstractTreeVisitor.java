@@ -17,6 +17,8 @@ public interface AbstractTreeVisitor {
 
     SimpleOperation visitSimpleOperation(SimpleOperation ctx);
 
+    SpecialOperation visitSpecialOperation(SpecialOperation ctx);
+
     ArrayConstructor visitArrayConstructor(ArrayConstructor ctx);
 
     FunctionConstructor visitFunctionConstructor(FunctionConstructor ctx);

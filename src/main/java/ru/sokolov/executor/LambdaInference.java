@@ -4,6 +4,7 @@ import ru.sokolov.type_inference.Inference;
 import ru.sokolov.type_inference.ast.*;
 import ru.sokolov.type_inference.type.Type;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -50,7 +51,7 @@ public class LambdaInference {
         };
 
         Node[] roots3 = new Node[]{
-                new Function(Arrays.asList("x", "y"), new Apply(new Apply(new TypeIdentifier("*"), new TypeIdentifier("x")),
+                new Function(new TypeIdentifier("fn"), Arrays.asList("x", "y"), new ArrayList<>(),new Apply(new Apply(new TypeIdentifier("*"), new TypeIdentifier("x")),
                         new TypeIdentifier("y"))),
 
                 new Let(

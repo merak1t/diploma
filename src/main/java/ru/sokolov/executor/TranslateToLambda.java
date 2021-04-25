@@ -1,7 +1,9 @@
 package ru.sokolov.executor;
 
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.*;
 import ru.sokolov.type_inference.ast.*;
+import ru.sokolov.type_inference.type.Type;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +41,7 @@ public class TranslateToLambda implements AbstractTranslate {
             } else if (child instanceof ExpressionStmt) {
                 res.addAll(visitExpressionStmt((ExpressionStmt) child));
             } else if (child instanceof ReturnStmt) {
-                res.addAll(visitReturnStmt((ReturnStmt) child));
+                // Do nothing
             } else {
                 System.out.println("Undefined " + child + " in context " + ctx);
             }
@@ -50,8 +52,8 @@ public class TranslateToLambda implements AbstractTranslate {
     @Override
     public Node visitDeclaration(Declaration ctx) {
         ArrayList<Node> res = new ArrayList<>();
-        for (var i = 0; i < ctx.children().size(); i++) {
-            var child = ctx.children().get(i);
+        for (var child : ctx.children()) {
+            System.out.println(child);
             if (child instanceof Identifier) {
                 res.add(new TypeIdentifier(((Identifier) child).getValue()));
             } else if (child instanceof Literal) {
@@ -59,13 +61,19 @@ public class TranslateToLambda implements AbstractTranslate {
             } else if (child instanceof SimpleOperation) {
                 res.add(visitSimpleOperation((SimpleOperation) child));
             } else if (child instanceof ArrayConstructor) {
-                res.addAll(visitArrayConstructor((ArrayConstructor) child));
+                res.add(visitArrayConstructor((ArrayConstructor) child));
             } else if (child instanceof ExpressionStmt) {
                 res.addAll(visitExpressionStmt((ExpressionStmt) child));
+            } else if (child instanceof SpecialOperation) {
+                System.out.println(child);
+                res.add(visitSpecialOperation((SpecialOperation) child));
+            } else {
+                System.err.println("Undefined " + child + " in context " + ctx);
             }
         }
         assert res.size() == 2;
         var varName = res.get(0).toString();
+        System.out.println("res " + res);
         return new Let(varName, res.get(1), res.get(0));
     }
 
@@ -84,7 +92,13 @@ public class TranslateToLambda implements AbstractTranslate {
 
     @Override
     public List<Node> visitFunctionDeclaration(FunctionDeclaration ctx) {
-        return null;
+
+        if (ctx.children().size() != 2) {
+            System.err.println("Wrong FunctionDeclaration " + ctx);
+            return new ArrayList<>();
+        }
+        var construct = (FunctionConstructor) ctx.children().get(1);
+        return visitFunctionConstructor(construct);
     }
 
     @Override
@@ -103,35 +117,85 @@ public class TranslateToLambda implements AbstractTranslate {
             } else if (child instanceof Literal) {
                 res.add(createLiteral((Literal) child));
             } else {
-                System.out.println("Type.Undefined " + child + " in context " + ctx);
+                System.err.println("Type.Undefined " + child + " in context " + ctx);
             }
         }
         assert res.size() == 2;
-        return new Apply(
-                new Apply(
-                        new TypeIdentifier(ctx.getOperator().getSymbol()),
-                        res.get(0)),
-                res.get(1));
+        return new BiFunction(ctx.getOperator(), res.get(0), res.get(1));
     }
 
     @Override
-    public List<Node> visitArrayConstructor(ArrayConstructor ctx) {
-        return null;
+    public Node visitArrayConstructor(ArrayConstructor ctx) {
+        var res = new ArrayList<Node>();
+        for (var child : ctx.children()) {
+            if (child instanceof SimpleOperation) {
+                res.add(visitSimpleOperation((SimpleOperation) child));
+            } else if (child instanceof Reference) {
+                res.add(visitReference((Reference) child));
+            } else if (child instanceof Literal) {
+                res.add(createLiteral((Literal) child));
+            } else {
+                System.err.println("Type.Undefined " + child + " in context " + ctx);
+            }
+        }
+        return new Array(res);
+    }
+
+    private Node getReturnStmt(Block ctx) {
+        Node res = null;
+        for (var child : ctx.children()) {
+            if (child instanceof ReturnStmt) {
+                res = visitReturnStmt((ReturnStmt) child);
+            }
+        }
+        ;
+        assert res != null;
+        return res;
     }
 
     @Override
     public List<Node> visitFunctionConstructor(FunctionConstructor ctx) {
-        return null;
+        var body = new ArrayList<Node>();
+        var listParams = new ArrayList<String>();
+        Node fn = null;
+        Node returnStmt = null;
+        for (var child : ctx.children()) {
+            if (child instanceof Identifier) {
+                fn = new TypeIdentifier(((Identifier) child).getValue());
+            } else if (child instanceof FormalParam) {
+                listParams.addAll(visitFormalParam((FormalParam) child));
+            } else if (child instanceof Block) {
+                body.addAll(visitProgram((Block) child));
+                returnStmt = getReturnStmt((Block) child);
+            } else {
+                System.err.println("Type.Undefined in Declaration " + child);
+            }
+        }
+        assert fn != null && returnStmt != null;
+        Node resFunc = new Function(fn, listParams, body, returnStmt);
+        var res = new ArrayList<Node>();
+        res.add(resFunc);
+        res.addAll(body);
+        return res;
+
     }
 
     @Override
-    public List<Node> visitFormalParam(FormalParam ctx) {
-        return null;
+    public List<String> visitFormalParam(FormalParam ctx) {
+        var res = new ArrayList<String>();
+        if (ctx.children().isEmpty()) {
+            System.err.println("Type.Wrong Param in " + ctx);
+            return res;
+        }
+        var identifier = (Identifier) ctx.children().get(0);
+        res.add(identifier.getValue());
+        return res;
     }
 
     @Override
-    public List<Node> visitReturnStmt(ReturnStmt ctx) {
-        return null;
+    public Node visitReturnStmt(ReturnStmt ctx) {
+        return visitSimpleOperation((SimpleOperation) ctx.children().get(0));
+
     }
 
     @Override
@@ -142,6 +206,30 @@ public class TranslateToLambda implements AbstractTranslate {
     @Override
     public List<Node> visitAssignOperation(AssignOperation ctx) {
         return null;
+    }
+
+    @Override
+    public Node visitSpecialOperation(SpecialOperation ctx) {
+        Node fn = null;
+        var res = new ArrayList<Node>();
+        if (!ctx.children().isEmpty() && ctx.children().get(0) instanceof Reference) {
+            fn = new TypeIdentifier(((Reference) ctx.children().get(0)).getIdentifierName());
+        }
+        for (int i = 1; i < ctx.children().size(); i++) {
+            var child = ctx.children().get(i);
+            if (child instanceof Reference) {
+                res.add(visitReference((Reference) child));
+            } else if (child instanceof Literal) {
+                res.add(createLiteral((Literal) child));
+            } else if (child instanceof SimpleOperation) {
+                res.add(visitSimpleOperation((SimpleOperation) child));
+            } else {
+                System.err.println("Type.Undefined " + child + " in context " + ctx);
+            }
+        }
+        assert fn != null;
+        System.out.println("FN " + fn + " : " + new Array(res));
+        return new Apply(fn, new Array(res));
     }
 
     @Override

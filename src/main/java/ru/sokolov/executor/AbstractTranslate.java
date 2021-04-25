@@ -19,17 +19,19 @@ public interface AbstractTranslate {
 
     Node visitSimpleOperation(SimpleOperation ctx);
 
-    List<Node> visitArrayConstructor(ArrayConstructor ctx);
+    Node visitArrayConstructor(ArrayConstructor ctx);
 
     List<Node> visitFunctionConstructor(FunctionConstructor ctx);
 
-    List<Node> visitFormalParam(FormalParam ctx);
+    List<String> visitFormalParam(FormalParam ctx);
 
-    List<Node> visitReturnStmt(ReturnStmt ctx);
+    Node visitReturnStmt(ReturnStmt ctx);
 
     Node visitReference(Reference ctx);
 
     List<Node> visitAssignOperation(AssignOperation ctx);
+
+    Node visitSpecialOperation(SpecialOperation ctx);
 
     List<Node> visitConditional(Conditional ctx);
 
